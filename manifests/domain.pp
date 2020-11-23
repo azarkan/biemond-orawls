@@ -291,7 +291,12 @@ define orawls::domain (
         $templateSoapJms   = 'WebLogic JAX-WS SOAP/JMS Extension'
       } else {
         $template          = "${weblogic_home_dir}/common/templates/wls/wls.jar"
-        $templateCoherence = "${weblogic_home_dir}/common/templates/wls/wls_coherence_template.jar"
+        if $domain_template == 'adf' or $domain_template == 'forms' {
+          $templateCoherence = 'dummy'
+        }
+        else {
+          $templateCoherence = "${weblogic_home_dir}/common/templates/wls/wls_coherence_template.jar"
+        }
         $templateWS        = "${middleware_home_dir}/oracle_common/common/templates/wls/oracle.wls-webservice-template.jar"
         $templateJaxWS     = "${middleware_home_dir}/oracle_common/common/templates/wls/oracle.wls-webservice-jaxws-template.jar"
         $templateSoapJms   = "${middleware_home_dir}/oracle_common/common/templates/wls/oracle.wls-webservice-soapjms-template.jar"
