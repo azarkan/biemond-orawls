@@ -802,12 +802,12 @@ define orawls::domain (
       }
     }
 
-    yaml_setting { "domain ${title}":
-      target  =>  $wls_domains_file,
-      key     =>  "domains/${domain_name}",
-      value   =>  $domain_dir,
-      require =>  Exec["execwlst ${domain_name} ${title}"],
-    }
+    #yaml_setting { "domain ${title}":
+    #  target  =>  $wls_domains_file,
+    #  key     =>  "domains/${domain_name}",
+    #  value   =>  $domain_dir,
+    #  require =>  Exec["execwlst ${domain_name} ${title}"],
+    #}
 
     if ($domain_template == 'oim') {
 
