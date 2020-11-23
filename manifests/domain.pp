@@ -291,7 +291,7 @@ define orawls::domain (
         $templateSoapJms   = 'WebLogic JAX-WS SOAP/JMS Extension'
       } else {
         $template          = "${weblogic_home_dir}/common/templates/wls/wls.jar"
-        if $domain_template == 'adf' or $domain_template == 'forms' {
+        if domain_template == 'adf' or domain_template == 'forms' {
           $templateCoherence = 'dummy'
         }
         else {
