@@ -175,8 +175,10 @@ define orawls::domain (
   $domain_dir = "${domains_dir}/${domain_name}"
 
   # check if the domain already exists
-  $found = orawls::domain_exists($domain_dir)
+  #. doesn't seem to work so using find_file $found = orawls::domain_exists($domain_dir)
 
+  $found = find_file($domain_dir)
+  
   if $found == undef {
     $continue = true
   } else {
