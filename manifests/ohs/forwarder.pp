@@ -51,7 +51,7 @@ define orawls::ohs::forwarder (
   # puppet epp render forwarder.conf.epp --values "{location => 'aaa' , size => 1, servers => ['192.168.1.1:7000'] }"
   # puppet epp render forwarder.conf.epp --values "{location => 'aaa' , size => 3, servers => ['192.168.1.2:7000', '192.168.1.3:7000', '192.168.1.4:7002'], servers_string => '192.168.1.2:7000,192.168.1.3:7000,192.168.1.4:7002' }"
 
-  file { "${domain_dir}/config/fmwconfig/components/OHS/ohs1/mod_wl_ohs.d/${sanitised_title}.conf":
+  file { "${domain_dir}/config/fmwconfig/components/OHS/instances/ohs1/moduleconf/${sanitised_title}.conf":
     ensure  => $ensure,
     content => epp('orawls/ohs/forwarder.conf.epp', {
                     'location'       => $title,
