@@ -46,11 +46,11 @@ selectTemplate('Oracle HTTP Server (Collocated)')
 print 'Adding Template: Oracle Forms'
 selectTemplate('Oracle Forms')
 
-print 'Adding Template: Oracle Reports Application'
-selectTemplate('Oracle Reports Application')
+#print 'Adding Template: Oracle Reports Application'
+#selectTemplate('Oracle Reports Application')
 
-print 'Adding Template: Oracle Reports Server'
-selectTemplate('Oracle Reports Server')
+#print 'Adding Template: Oracle Reports Server'
+#selectTemplate('Oracle Reports Server')
 
 print('Loading all required templates')
 loadTemplates()
@@ -67,9 +67,9 @@ print 'change WLS_FORMS'
 cd('/')
 change_managed_server('WLS_FORMS', '<%= @adminserver_machine_name %>', '<%= @adminserver_address %>', 9001, FORMS_JAVA_ARGUMENTS, '<%= @admin_nodemanager_log_dir %>', JAVA_HOME, JSSE_ENABLED)
 
-print 'change WLS_REPORTS'
-cd('/')
-change_managed_server('WLS_REPORTS', '<%= @adminserver_machine_name %>', '<%= @adminserver_address %>', 9002, REPORTS_JAVA_ARGUMENTS, '<%= @admin_nodemanager_log_dir %>', JAVA_HOME, JSSE_ENABLED)
+#print 'change WLS_REPORTS'
+#cd('/')
+#change_managed_server('WLS_REPORTS', '<%= @adminserver_machine_name %>', '<%= @adminserver_address %>', 9002, REPORTS_JAVA_ARGUMENTS, '<%= @admin_nodemanager_log_dir %>', JAVA_HOME, JSSE_ENABLED)
 
 print 'Change AdminServer'
 cd('/Servers/' + ADMIN_SERVER)
@@ -79,9 +79,9 @@ print 'change WLS_FORMS'
 cd('/')
 change_managed_server('WLS_FORMS', '<%= @adminserver_machine_name %>', '<%= @adminserver_address %>', 9001, FORMS_JAVA_ARGUMENTS, '<%= @admin_nodemanager_log_dir %>', JAVA_HOME, JSSE_ENABLED)
 
-print 'change WLS_REPORTS'
-cd('/')
-change_managed_server('WLS_REPORTS', '<%= @adminserver_machine_name %>', '<%= @adminserver_address %>', 9002, REPORTS_JAVA_ARGUMENTS, '<%= @admin_nodemanager_log_dir %>', JAVA_HOME, JSSE_ENABLED)
+#print 'change WLS_REPORTS'
+#cd('/')
+#change_managed_server('WLS_REPORTS', '<%= @adminserver_machine_name %>', '<%= @adminserver_address %>', 9002, REPORTS_JAVA_ARGUMENTS, '<%= @admin_nodemanager_log_dir %>', JAVA_HOME, JSSE_ENABLED)
 
 
 print 'Change datasources'
