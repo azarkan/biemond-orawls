@@ -98,7 +98,8 @@ define orawls::opatchupgrade(
       path        => $exec_path,
       user        => $os_user,
       group       => $os_group,
-      onlyif      => "test -f ${opatch_jar_file}",
+      #onlyif      => "test -f ${opatch_jar_file}",
+      unless      => "${oracle_product_home_dir}/OPatch/opatch version | grep $opversion"
     }
   }
 }
