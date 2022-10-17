@@ -5,7 +5,7 @@ password = sys.argv[2]
 prefix = sys.argv[3]
 sysuser = sys.argv[4]
 
-conn = DriverManager.getConnection(jdbcurl, sysuser + " as sysdba", password)
+conn = DriverManager.getConnection(jdbcurl, sysuser, password)
 stmt = conn.createStatement()
 try:
     rs = stmt.executeQuery("select distinct 'found' from system.schema_version_registry where upper(mrc_name) = upper('" + prefix + "')")
