@@ -538,8 +538,12 @@ if ( $version == 1221 or $version == 1213 or $version >= 12210 ) {
         $binFile1                 = 'fmw_12.2.1.1.0_ohs_linux64.bin'
       } elsif $version == 12212 {
         $binFile1                 = 'fmw_12.2.1.2.0_ohs_linux64.bin'
-      } else {
+      } elsif $version == 12213 {
         $binFile1                 = 'fmw_12.2.1.3.0_ohs_linux64.bin'
+      } elsif $version == 12214 {
+        $binFile1                 = 'fmw_12.2.1.4.0_ohs_linux64.bin'
+      } else {
+        $binFile1                 = 'fmw_12.2.1.4.0_ohs_linux64.bin'
       }
       $createFile1              = "${download_dir}/${sanitised_title}/${binFile1}"
       $type                     = 'bin'
