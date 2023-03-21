@@ -36,12 +36,11 @@ define orawls::utils::fmwclusterjrf (
   String $jrf_target_name                                 = undef,
   String $opss_datasource_name                            = undef,
   String $weblogic_user                                   = 'weblogic',
-  String $weblogic_password                               = undef,
+  String $weblogic_password                               = $::orawls::weblogic::wls_weblogic_password,
   String $os_user                                         = $::orawls::weblogic::os_user,
   String $os_group                                        = $::orawls::weblogic::os_group,
   String $download_dir                                    = $::orawls::weblogic::download_dir,
-  Boolean $log_output                                     = $::orawls::weblogic::log_output,
-  Boolean $jsse_enabled                                    = false
+  Boolean $log_output                                     = $::orawls::weblogic::log_output
 )
 {
   if ( $wls_domains_dir == undef or $wls_domains_dir == '') {
@@ -67,35 +66,18 @@ define orawls::utils::fmwclusterjrf (
   }
 
   if ($continue) {
-    #shutdown adminserver for offline WLST scripts
-    orawls::control{"ShutdownAdminServerForJRF${title}":
-      weblogic_home_dir   => $weblogic_home_dir,
-      jdk_home_dir        => $jdk_home_dir,
-      domain_name         => $domain_name,
-      wls_domains_dir     => $domains_dir,
-      server_type         => 'admin',
-      target              => 'Server',
-      server              => $adminserver_name,
-      adminserver_address => $adminserver_address,
-      adminserver_port    => $adminserver_port,
-      nodemanager_port    => $nodemanager_port,
-      action              => 'stop',
-      weblogic_user       => $weblogic_user,
-      weblogic_password   => $weblogic_password,
-      os_user             => $os_user,
-      os_group            => $os_group,
-      download_dir        => $download_dir,
-      log_output          => $log_output,
-      jsse_enabled        => $jsse_enabled
-    }
-
-    file { "${download_dir}/${title}_assignJrfToCluster.py":
+   file { "${download_dir}/${title}_assignJrfToCluster.py":
       ensure  => present,
       content => epp('orawls/wlst/wlstexec/fmw/assignJrfToCluster.py.epp', {
                       'weblogic_home_dir'    => $weblogic_home_dir,
                       'domain_dir'           => $domain_dir,
                       'jrf_target_name'      => $jrf_target_name,
-                      'opss_datasource_name' => $opss_datasource_name }),
+                      'opss_datasource_name' => $opss_datasource_name,
+                      'weblogic_user'        => $weblogic_user,
+                      'weblogic_password'.   => $weblogic_password,
+                      'adminserver_address'  => $adminserver_address,
+                      'adminserver_port'.    => $adminserver_port}),
+                      
       backup  => false,
       replace => true,
       mode    => lookup('orawls::permissions_group_restricted'),
@@ -113,10 +95,29 @@ define orawls::utils::fmwclusterjrf (
       user        => $os_user,
       group       => $os_group,
       logoutput   => $log_output,
-      require     => [File["${download_dir}/${title}_assignJrfToCluster.py"],
-                      Orawls::Control["ShutdownAdminServerForJRF${title}"],]
-    }
-
+      require     => [File["${download_dir}/${title}_assignJrfToCluster.py"]
+    } ->
+    #shutdown adminserver for offline WLST scripts
+    orawls::control{"ShutdownAdminServerForJSF${title}":
+      weblogic_home_dir   => $weblogic_home_dir,
+      jdk_home_dir        => $jdk_home_dir,
+      domain_name         => $domain_name,
+      wls_domains_dir     => $domains_dir,
+      server_type         => 'admin',
+      target              => 'Server',
+      server              => $adminserver_name,
+      adminserver_address => $adminserver_address,
+      adminserver_port    => $adminserver_port,
+      nodemanager_port    => $nodemanager_port,
+      action              => 'stop',
+      weblogic_user       => $weblogic_user,
+      weblogic_password   => $weblogic_password,
+      os_user             => $os_user,
+      os_group            => $os_group,
+      download_dir        => $download_dir,
+      log_output          => $log_output,
+      jsse_enabled        => $jsse_enabled,
+    } ->
     #startup adminserver for offline WLST scripts
     orawls::control{"StartupAdminServerForJSF${title}":
       weblogic_home_dir   => $weblogic_home_dir,
@@ -136,8 +137,7 @@ define orawls::utils::fmwclusterjrf (
       os_group            => $os_group,
       download_dir        => $download_dir,
       log_output          => $log_output,
-      jsse_enabled        => $jsse_enabled,
-      require             => Exec["execwlst assignJrfToCluster.py ${title}"],
+      jsse_enabled        => $jsse_enabled
     }
   }
 }
