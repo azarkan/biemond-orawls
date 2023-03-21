@@ -41,7 +41,7 @@ define orawls::utils::fmwclusterjrf (
   String $os_group                                        = $::orawls::weblogic::os_group,
   String $download_dir                                    = $::orawls::weblogic::download_dir,
   Boolean $log_output                                     = $::orawls::weblogic::log_output,
-  Boolean jsse_enabled                                    = false
+  Boolean $jsse_enabled                                    = false
 )
 {
   if ( $wls_domains_dir == undef or $wls_domains_dir == '') {
