@@ -74,9 +74,9 @@ define orawls::utils::fmwclusterjrf (
                       'jrf_target_name'      => $jrf_target_name,
                       'opss_datasource_name' => $opss_datasource_name,
                       'weblogic_user'        => $weblogic_user,
-                      'weblogic_password'.   => $weblogic_password,
+                      'weblogic_password'    => $weblogic_password,
                       'adminserver_address'  => $adminserver_address,
-                      'adminserver_port'.    => $adminserver_port}),
+                      'adminserver_port'     => $adminserver_port}),
                       
       backup  => false,
       replace => true,
