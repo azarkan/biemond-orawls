@@ -53,20 +53,20 @@ define orawls::utils::fmwclusterjrf (
   # check if the adf is already targeted to the cluster on this weblogic domain
   $found = orawls::product_configured($domain_dir, $jrf_target_name, 'jrf')
 
-  if $found == undef {
-    $continue = false
-    notify { "orawls::utils::fmwclusterjrf ${title} ${version} continue false cause nill": }
-  } else {
-    if ($found) {
-      $continue = false
-    } else {
-      notify { "orawls::utils::fmwclusterjrf ${title} ${version} continue true cause not exists": }
-      $continue = true
-    }
-  }
+  #if $found == undef {
+  #  $continue = false
+  #  notify { "orawls::utils::fmwclusterjrf ${title} ${version} continue false cause nill": }
+  #} else {
+  #  if ($found) {
+  #    $continue = false
+  #  } else {
+  #    notify { "orawls::utils::fmwclusterjrf ${title} ${version} continue true cause not exists": }
+  #    $continue = true
+  #  }
+  #}
 
   $continue = true
-  
+
   if ($continue) {
    file { "${download_dir}/${title}_assignJrfToCluster.py":
       ensure  => present,
