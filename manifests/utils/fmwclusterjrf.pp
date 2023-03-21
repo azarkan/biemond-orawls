@@ -65,6 +65,8 @@ define orawls::utils::fmwclusterjrf (
     }
   }
 
+  $continue = true
+  
   if ($continue) {
    file { "${download_dir}/${title}_assignJrfToCluster.py":
       ensure  => present,
