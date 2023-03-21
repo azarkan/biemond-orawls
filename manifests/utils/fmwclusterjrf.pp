@@ -116,7 +116,7 @@ define orawls::utils::fmwclusterjrf (
       os_group            => $os_group,
       download_dir        => $download_dir,
       log_output          => $log_output,
-      jsse_enabled        => $jsse_enabled,
+      jsse_enabled        => false,
     } ->
 
     #startup adminserver for offline WLST scripts
@@ -138,7 +138,7 @@ define orawls::utils::fmwclusterjrf (
       os_group            => $os_group,
       download_dir        => $download_dir,
       log_output          => $log_output,
-      jsse_enabled        => $jsse_enabled
+      jsse_enabled        => false
     }
   }
 }
