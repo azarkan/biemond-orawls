@@ -41,6 +41,7 @@ define orawls::utils::fmwclusterjrf (
   String $os_group                                        = $::orawls::weblogic::os_group,
   String $download_dir                                    = $::orawls::weblogic::download_dir,
   Boolean $log_output                                     = $::orawls::weblogic::log_output,
+  Boolean jsse_enabled                                    = false
 )
 {
   if ( $wls_domains_dir == undef or $wls_domains_dir == '') {
@@ -85,6 +86,7 @@ define orawls::utils::fmwclusterjrf (
       os_group            => $os_group,
       download_dir        => $download_dir,
       log_output          => $log_output,
+      jsse_enabled        => $jsse_enabled
     }
 
     file { "${download_dir}/${title}_assignJrfToCluster.py":
@@ -134,6 +136,7 @@ define orawls::utils::fmwclusterjrf (
       os_group            => $os_group,
       download_dir        => $download_dir,
       log_output          => $log_output,
+      jsse_enabled        => $jsse_enabled,
       require             => Exec["execwlst assignJrfToCluster.py ${title}"],
     }
   }
