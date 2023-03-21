@@ -77,7 +77,6 @@ define orawls::utils::fmwclusterjrf (
                       'weblogic_password'    => $weblogic_password,
                       'adminserver_address'  => $adminserver_address,
                       'adminserver_port'     => $adminserver_port}),
-                      
       backup  => false,
       replace => true,
       mode    => lookup('orawls::permissions_group_restricted'),
@@ -95,8 +94,9 @@ define orawls::utils::fmwclusterjrf (
       user        => $os_user,
       group       => $os_group,
       logoutput   => $log_output,
-      require     => [File["${download_dir}/${title}_assignJrfToCluster.py"]
+      require     => File["${download_dir}/${title}_assignJrfToCluster.py"]
     } ->
+    
     #shutdown adminserver for offline WLST scripts
     orawls::control{"ShutdownAdminServerForJSF${title}":
       weblogic_home_dir   => $weblogic_home_dir,
@@ -118,6 +118,7 @@ define orawls::utils::fmwclusterjrf (
       log_output          => $log_output,
       jsse_enabled        => $jsse_enabled,
     } ->
+
     #startup adminserver for offline WLST scripts
     orawls::control{"StartupAdminServerForJSF${title}":
       weblogic_home_dir   => $weblogic_home_dir,
