@@ -164,6 +164,7 @@ define orawls::utils::fmwcluster (
         os_group                    => $os_group,
         download_dir                => $download_dir,
         log_output                  => $log_output,
+        nodemanager_secure_listener => false
       }
       if $version >= 1221 {
         $new_version = 1221
@@ -217,6 +218,7 @@ define orawls::utils::fmwcluster (
         os_group                    => $os_group,
         download_dir                => $download_dir,
         log_output                  => $log_output,
+        nodemanager_secure_listener => false,
         require                     => Exec["execwlst assignOsbSoaBpmBamToClusters.py ${title}"],
       }
     }
