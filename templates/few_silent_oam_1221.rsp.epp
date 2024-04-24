@@ -1,3 +1,5 @@
+<%- |  String $middleware_home_dir,
+       Optional[String] $oracleHome = undef| -%>
 [ENGINE]
 
 #DO NOT CHANGE THIS.
@@ -30,7 +32,7 @@ SOFTWARE_UPDATES_PROXY_USER=
 SOFTWARE_UPDATES_PROXY_PASSWORD=<SECURE VALUE>
 
 #The oracle home location. This can be an existing Oracle Home or a new Oracle Home
-ORACLE_HOME=/app/weblogic/middleware
+ORACLE_HOME=<%= $oracleHome %>
 
 #The federated oracle home locations. This should be an existing Oracle Home. Multiple values can be provided as comma seperated values
 FEDERATED_ORACLE_HOMES=
