@@ -1,0 +1,176 @@
+# Batch JMS Resource Creation - Single WLST Transaction
+# This significantly improves performance by creating all resources in one activate() cycle
+
+real_domain='<%= domain %>'
+jmsmodule='<%= jmsmodule %>'
+
+# Parse resource data from Puppet
+import json
+
+queues_json = '<%= queues %>'
+topics_json = '<%= topics %>'
+connection_factories_json = '<%= connection_factories %>'
+subdeployments_json = '<%= subdeployments %>'
+jms_servers_json = '<%= jms_servers %>'
+quotas_json = '<%= quotas %>'
+
+# Helper function to safely parse JSON
+def parse_json_safe(json_str):
+    if json_str and json_str != '':
+        try:
+            return json.loads(json_str)
+        except:
+            return {}
+    return {}
+
+queues = parse_json_safe(queues_json)
+topics = parse_json_safe(topics_json)
+connection_factories = parse_json_safe(connection_factories_json)
+subdeployments = parse_json_safe(subdeployments_json)
+jms_servers = parse_json_safe(jms_servers_json)
+quotas = parse_json_safe(quotas_json)
+
+edit()
+startEdit()
+
+try:
+    print "=== Starting Batch JMS Resource Creation ==="
+    print "Module: " + jmsmodule
+    
+    # Step 1: Create JMS Servers
+    if jms_servers:
+        print "Creating " + str(len(jms_servers)) + " JMS Servers..."
+        for server_name, server_config in jms_servers.items():
+            cd('/')
+            cd('/JMSServers')
+            if not ls(server_name):
+                print "  Creating JMS Server: " + server_name
+                cmo.createJMSServer(server_name)
+                cd('/JMSServers/' + server_name)
+                if 'target' in server_config:
+                    set('Targets', jarray.array([ObjectName('com.bea:Name=' + server_config['target'] + ',Type=Server')], ObjectName))
+    
+    # Step 2: Create Subdeployments
+    if subdeployments:
+        print "Creating " + str(len(subdeployments)) + " Subdeployments..."
+        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+        for subdep_name, subdep_config in subdeployments.items():
+            if not ls('SubDeployments/' + subdep_name):
+                print "  Creating Subdeployment: " + subdep_name
+                cmo.createSubDeployment(subdep_name)
+                cd('/JMSSystemResources/' + jmsmodule + '/SubDeployments/' + subdep_name)
+                if 'target' in subdep_config:
+                    targets = subdep_config['target']
+                    if isinstance(targets, list):
+                        target_array = jarray.array([ObjectName('com.bea:Name=' + t + ',Type=JMSServer') for t in targets], ObjectName)
+                        set('Targets', target_array)
+                cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+    
+    # Step 3: Create Quotas
+    if quotas:
+        print "Creating " + str(len(quotas)) + " Quotas..."
+        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+        for quota_name, quota_config in quotas.items():
+            if not ls('Quotas/' + quota_name):
+                print "  Creating Quota: " + quota_name
+                cmo.createQuota(quota_name)
+                cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/Quotas/' + quota_name)
+                if 'bytesmaximum' in quota_config:
+                    set('BytesMaximum', long(quota_config['bytesmaximum']))
+                if 'messagesmaximum' in quota_config:
+                    set('MessagesMaximum', long(quota_config['messagesmaximum']))
+                cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+    
+    # Step 4: Create Connection Factories
+    if connection_factories:
+        print "Creating " + str(len(connection_factories)) + " Connection Factories..."
+        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+        for cf_name, cf_config in connection_factories.items():
+            if not ls('ConnectionFactories/' + cf_name):
+                print "  Creating Connection Factory: " + cf_name
+                cmo.createConnectionFactory(cf_name)
+                cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/ConnectionFactories/' + cf_name)
+                if 'jndiname' in cf_config:
+                    set('JNDIName', cf_config['jndiname'])
+                if 'subdeployment' in cf_config:
+                    set('SubDeploymentName', cf_config['subdeployment'])
+                cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+    
+    # Step 5: Create Queues (bulk creation)
+    if queues:
+        print "Creating " + str(len(queues)) + " Queues..."
+        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+        
+        for queue_name, queue_config in queues.items():
+            # Extract module and queue name from composite key (e.g., "ModuleName:QueueName")
+            if ':' in queue_name:
+                parts = queue_name.split(':')
+                actual_queue_name = parts[1]
+            else:
+                actual_queue_name = queue_name
+            
+            distributed = queue_config.get('distributed', '0')
+            
+            if distributed == '1':
+                if not ls('UniformDistributedQueues/' + actual_queue_name):
+                    print "  Creating Distributed Queue: " + actual_queue_name
+                    cmo.createUniformDistributedQueue(actual_queue_name)
+                    queue_path = '/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/UniformDistributedQueues/' + actual_queue_name
+            else:
+                if not ls('Queues/' + actual_queue_name):
+                    print "  Creating Queue: " + actual_queue_name
+                    cmo.createQueue(actual_queue_name)
+                    queue_path = '/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/Queues/' + actual_queue_name
+            
+            cd(queue_path)
+            if 'jndiname' in queue_config:
+                set('JNDIName', queue_config['jndiname'])
+            if 'subdeployment' in queue_config:
+                set('SubDeploymentName', queue_config['subdeployment'])
+            
+            cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+    
+    # Step 6: Create Topics
+    if topics:
+        print "Creating " + str(len(topics)) + " Topics..."
+        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+        
+        for topic_name, topic_config in topics.items():
+            if ':' in topic_name:
+                parts = topic_name.split(':')
+                actual_topic_name = parts[1]
+            else:
+                actual_topic_name = topic_name
+            
+            distributed = topic_config.get('distributed', '0')
+            
+            if distributed == '1':
+                if not ls('UniformDistributedTopics/' + actual_topic_name):
+                    print "  Creating Distributed Topic: " + actual_topic_name
+                    cmo.createUniformDistributedTopic(actual_topic_name)
+                    topic_path = '/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/UniformDistributedTopics/' + actual_topic_name
+            else:
+                if not ls('Topics/' + actual_topic_name):
+                    print "  Creating Topic: " + actual_topic_name
+                    cmo.createTopic(actual_topic_name)
+                    topic_path = '/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/Topics/' + actual_topic_name
+            
+            cd(topic_path)
+            if 'jndiname' in topic_config:
+                set('JNDIName', topic_config['jndiname'])
+            if 'subdeployment' in topic_config:
+                set('SubDeploymentName', topic_config['subdeployment'])
+            
+            cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+    
+    print "=== Saving and Activating All Changes ==="
+    save()
+    activate()
+    print "=== Batch JMS Resource Creation Complete ==="
+    report_back_success()
+
+except Exception, e:
+    print "ERROR during batch creation: " + str(e)
+    import traceback
+    traceback.print_exc()
+    report_back_error()
