@@ -37,30 +37,12 @@ module Puppet
     parameter :name
     parameter :jmsmodule
     parameter :timeout
-    
-    property :queues do
-      desc 'Hash of JMS queues to create'
-    end
-    
-    property :topics do
-      desc 'Hash of JMS topics to create'
-    end
-    
-    property :connection_factories do
-      desc 'Hash of JMS connection factories to create'
-    end
-    
-    property :subdeployments do
-      desc 'Hash of JMS subdeployments to create'
-    end
-    
-    property :jms_servers do
-      desc 'Hash of JMS servers to create'
-    end
-    
-    property :quotas do
-      desc 'Hash of JMS quotas to create'
-    end
+    parameter :queues
+    parameter :topics
+    parameter :connection_factories
+    parameter :subdeployments
+    parameter :jms_servers
+    parameter :quotas
 
     add_title_attributes(:jmsmodule) do
       /^((.*?\/)?(.*))$/
