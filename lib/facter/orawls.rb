@@ -771,7 +771,8 @@ def get_domain(domain_path, n)
 
     Facter.add("#{prefix}_domain_#{n}_jmsmodule_#{k}_objects") do
       setcode do
-        jmsstr
+        # Truncate to avoid Puppet's 4096 character fact limit
+        jmsstr.length > 4000 ? jmsstr[0..4000] + '...(truncated)' : jmsstr
       end
     end
     k += 1
