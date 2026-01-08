@@ -14,8 +14,8 @@ module Puppet
 
     to_get_raw_resources do
       Puppet.debug "index #{name}"
-      environment = { 'action' => 'index', 'type' => 'wls_jms_batch' }
-      wlst template('puppet:///modules/orawls/providers/wls_jms_batch/index.py.erb', binding), environment
+      # Batch resources don't have persistent state - always return empty to force creation
+      []
     end
 
     on_create  do | command_builder |

@@ -3,6 +3,17 @@
 
 real_domain='<%= domain %>'
 
+# Setup logging to persistent file
+import sys
+import time
+log_file = '/tmp/wls_jms_batch_' + time.strftime('%Y%m%d_%H%M%S') + '.log'
+log = open(log_file, 'w')
+sys.stdout = log
+sys.stderr = log
+print "=== Batch JMS Creation Log ==="
+print "Log file: " + log_file
+print "Timestamp: " + time.strftime('%Y-%m-%d %H:%M:%S')
+
 # Parse resource data from Puppet
 import json
 
@@ -227,10 +238,14 @@ try:
     save()
     activate()
     print "=== Batch JMS Resource Creation Complete ==="
+    log.flush()
+    log.close()
     report_back_success()
 
 except Exception, e:
     print "ERROR during batch creation: " + str(e)
     import traceback
     traceback.print_exc()
+    log.flush()
+    log.close()
     report_back_error()
