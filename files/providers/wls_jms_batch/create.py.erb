@@ -2,7 +2,6 @@
 # This significantly improves performance by creating all resources in one activate() cycle
 
 real_domain='<%= domain %>'
-jmsmodule='<%= jmsmodule %>'
 
 # Parse resource data from Puppet
 import json
@@ -23,6 +22,27 @@ def parse_json_safe(json_str):
             return {}
     return {}
 
+# Helper function to extract module and resource name from composite key
+def parse_resource_name(full_name):
+    """Parse 'ModuleName:ResourceName' into (module, resource)"""
+    if ':' in full_name:
+        parts = full_name.split(':', 1)
+        return parts[0], parts[1]
+    else:
+        return None, full_name
+
+# Helper function to group resources by module
+def group_by_module(resources):
+    """Group resources by their JMS module"""
+    grouped = {}
+    for resource_key, resource_config in resources.items():
+        module_name, resource_name = parse_resource_name(resource_key)
+        if module_name:
+            if module_name not in grouped:
+                grouped[module_name] = {}
+            grouped[module_name][resource_name] = resource_config
+    return grouped
+
 queues = parse_json_safe(queues_json)
 topics = parse_json_safe(topics_json)
 connection_factories = parse_json_safe(connection_factories_json)
@@ -30,138 +50,178 @@ subdeployments = parse_json_safe(subdeployments_json)
 jms_servers = parse_json_safe(jms_servers_json)
 quotas = parse_json_safe(quotas_json)
 
+# Group resources by module
+queues_by_module = group_by_module(queues)
+topics_by_module = group_by_module(topics)
+connection_factories_by_module = group_by_module(connection_factories)
+subdeployments_by_module = group_by_module(subdeployments)
+quotas_by_module = group_by_module(quotas)
+
 edit()
 startEdit()
 
 try:
     print "=== Starting Batch JMS Resource Creation ==="
-    print "Module: " + jmsmodule
     
-    # Step 1: Create JMS Servers
+    # Get all unique modules
+    all_modules = set()
+    all_modules.update(subdeployments_by_module.keys())
+    all_modules.update(quotas_by_module.keys())
+    all_modules.update(connection_factories_by_module.keys())
+    all_modules.update(queues_by_module.keys())
+    all_modules.update(topics_by_module.keys())
+    
+    print "Found " + str(len(all_modules)) + " JMS modules to process"
+    
+    # Step 1: Create JMS Servers (not module-specific)
     if jms_servers:
         print "Creating " + str(len(jms_servers)) + " JMS Servers..."
         for server_name, server_config in jms_servers.items():
             cd('/')
             cd('/JMSServers')
-            if not ls(server_name):
+            try:
+                ls(server_name)
+                print "  JMS Server already exists: " + server_name
+            except:
                 print "  Creating JMS Server: " + server_name
                 cmo.createJMSServer(server_name)
                 cd('/JMSServers/' + server_name)
                 if 'target' in server_config:
                     set('Targets', jarray.array([ObjectName('com.bea:Name=' + server_config['target'] + ',Type=Server')], ObjectName))
     
-    # Step 2: Create Subdeployments
-    if subdeployments:
-        print "Creating " + str(len(subdeployments)) + " Subdeployments..."
-        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
-        for subdep_name, subdep_config in subdeployments.items():
-            if not ls('SubDeployments/' + subdep_name):
-                print "  Creating Subdeployment: " + subdep_name
-                cmo.createSubDeployment(subdep_name)
-                cd('/JMSSystemResources/' + jmsmodule + '/SubDeployments/' + subdep_name)
-                if 'target' in subdep_config:
-                    targets = subdep_config['target']
-                    if isinstance(targets, list):
-                        target_array = jarray.array([ObjectName('com.bea:Name=' + t + ',Type=JMSServer') for t in targets], ObjectName)
-                        set('Targets', target_array)
-                cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
-    
-    # Step 3: Create Quotas
-    if quotas:
-        print "Creating " + str(len(quotas)) + " Quotas..."
-        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
-        for quota_name, quota_config in quotas.items():
-            if not ls('Quotas/' + quota_name):
-                print "  Creating Quota: " + quota_name
-                cmo.createQuota(quota_name)
-                cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/Quotas/' + quota_name)
-                if 'bytesmaximum' in quota_config:
-                    set('BytesMaximum', long(quota_config['bytesmaximum']))
-                if 'messagesmaximum' in quota_config:
-                    set('MessagesMaximum', long(quota_config['messagesmaximum']))
-                cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
-    
-    # Step 4: Create Connection Factories
-    if connection_factories:
-        print "Creating " + str(len(connection_factories)) + " Connection Factories..."
-        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
-        for cf_name, cf_config in connection_factories.items():
-            if not ls('ConnectionFactories/' + cf_name):
-                print "  Creating Connection Factory: " + cf_name
-                cmo.createConnectionFactory(cf_name)
-                cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/ConnectionFactories/' + cf_name)
-                if 'jndiname' in cf_config:
-                    set('JNDIName', cf_config['jndiname'])
-                if 'subdeployment' in cf_config:
-                    set('SubDeploymentName', cf_config['subdeployment'])
-                cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
-    
-    # Step 5: Create Queues (bulk creation)
-    if queues:
-        print "Creating " + str(len(queues)) + " Queues..."
-        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+    # Step 2-6: Process each module
+    for jmsmodule in all_modules:
+        print "\n=== Processing Module: " + jmsmodule + " ==="
         
-        for queue_name, queue_config in queues.items():
-            # Extract module and queue name from composite key (e.g., "ModuleName:QueueName")
-            if ':' in queue_name:
-                parts = queue_name.split(':')
-                actual_queue_name = parts[1]
-            else:
-                actual_queue_name = queue_name
-            
-            distributed = queue_config.get('distributed', '0')
-            
-            if distributed == '1':
-                if not ls('UniformDistributedQueues/' + actual_queue_name):
-                    print "  Creating Distributed Queue: " + actual_queue_name
-                    cmo.createUniformDistributedQueue(actual_queue_name)
-                    queue_path = '/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/UniformDistributedQueues/' + actual_queue_name
-            else:
-                if not ls('Queues/' + actual_queue_name):
-                    print "  Creating Queue: " + actual_queue_name
-                    cmo.createQueue(actual_queue_name)
-                    queue_path = '/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/Queues/' + actual_queue_name
-            
-            cd(queue_path)
-            if 'jndiname' in queue_config:
-                set('JNDIName', queue_config['jndiname'])
-            if 'subdeployment' in queue_config:
-                set('SubDeploymentName', queue_config['subdeployment'])
-            
+        # Step 2: Create Subdeployments for this module
+        if jmsmodule in subdeployments_by_module:
+            module_subdeployments = subdeployments_by_module[jmsmodule]
+            print "  Creating " + str(len(module_subdeployments)) + " Subdeployments..."
             cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
-    
-    # Step 6: Create Topics
-    if topics:
-        print "Creating " + str(len(topics)) + " Topics..."
-        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+            for subdep_name, subdep_config in module_subdeployments.items():
+                try:
+                    ls('SubDeployments/' + subdep_name)
+                    print "    Subdeployment already exists: " + subdep_name
+                except:
+                    print "    Creating Subdeployment: " + subdep_name
+                    cmo.createSubDeployment(subdep_name)
+                    cd('/JMSSystemResources/' + jmsmodule + '/SubDeployments/' + subdep_name)
+                    if 'target' in subdep_config:
+                        targets = subdep_config['target']
+                        if isinstance(targets, list):
+                            target_array = jarray.array([ObjectName('com.bea:Name=' + t + ',Type=JMSServer') for t in targets], ObjectName)
+                            set('Targets', target_array)
+                    cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
         
-        for topic_name, topic_config in topics.items():
-            if ':' in topic_name:
-                parts = topic_name.split(':')
-                actual_topic_name = parts[1]
-            else:
-                actual_topic_name = topic_name
-            
-            distributed = topic_config.get('distributed', '0')
-            
-            if distributed == '1':
-                if not ls('UniformDistributedTopics/' + actual_topic_name):
-                    print "  Creating Distributed Topic: " + actual_topic_name
-                    cmo.createUniformDistributedTopic(actual_topic_name)
-                    topic_path = '/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/UniformDistributedTopics/' + actual_topic_name
-            else:
-                if not ls('Topics/' + actual_topic_name):
-                    print "  Creating Topic: " + actual_topic_name
-                    cmo.createTopic(actual_topic_name)
-                    topic_path = '/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/Topics/' + actual_topic_name
-            
-            cd(topic_path)
-            if 'jndiname' in topic_config:
-                set('JNDIName', topic_config['jndiname'])
-            if 'subdeployment' in topic_config:
-                set('SubDeploymentName', topic_config['subdeployment'])
-            
+        # Step 3: Create Quotas for this module
+        if jmsmodule in quotas_by_module:
+            module_quotas = quotas_by_module[jmsmodule]
+            print "  Creating " + str(len(module_quotas)) + " Quotas..."
             cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+            for quota_name, quota_config in module_quotas.items():
+                try:
+                    ls('Quotas/' + quota_name)
+                    print "    Quota already exists: " + quota_name
+                except:
+                    print "    Creating Quota: " + quota_name
+                    cmo.createQuota(quota_name)
+                    cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/Quotas/' + quota_name)
+                    if 'bytesmaximum' in quota_config:
+                        set('BytesMaximum', long(quota_config['bytesmaximum']))
+                    if 'messagesmaximum' in quota_config:
+                        set('MessagesMaximum', long(quota_config['messagesmaximum']))
+                    cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+        
+        # Step 4: Create Connection Factories for this module
+        if jmsmodule in connection_factories_by_module:
+            module_cfs = connection_factories_by_module[jmsmodule]
+            print "  Creating " + str(len(module_cfs)) + " Connection Factories..."
+            cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+            for cf_name, cf_config in module_cfs.items():
+                try:
+                    ls('ConnectionFactories/' + cf_name)
+                    print "    Connection Factory already exists: " + cf_name
+                except:
+                    print "    Creating Connection Factory: " + cf_name
+                    cmo.createConnectionFactory(cf_name)
+                    cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/ConnectionFactories/' + cf_name)
+                    if 'jndiname' in cf_config:
+                        set('JNDIName', cf_config['jndiname'])
+                    if 'subdeployment' in cf_config:
+                        set('SubDeploymentName', cf_config['subdeployment'])
+                    cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+        
+        # Step 5: Create Queues for this module
+        if jmsmodule in queues_by_module:
+            module_queues = queues_by_module[jmsmodule]
+            print "  Creating " + str(len(module_queues)) + " Queues..."
+            cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+            
+            for queue_name, queue_config in module_queues.items():
+                distributed = queue_config.get('distributed', '0')
+                
+                if distributed == '1':
+                    try:
+                        ls('UniformDistributedQueues/' + queue_name)
+                        print "    Distributed Queue already exists: " + queue_name
+                    except:
+                        print "    Creating Distributed Queue: " + queue_name
+                        cmo.createUniformDistributedQueue(queue_name)
+                        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/UniformDistributedQueues/' + queue_name)
+                        if 'jndiname' in queue_config:
+                            set('JNDIName', queue_config['jndiname'])
+                        if 'subdeployment' in queue_config:
+                            set('SubDeploymentName', queue_config['subdeployment'])
+                        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+                else:
+                    try:
+                        ls('Queues/' + queue_name)
+                        print "    Queue already exists: " + queue_name
+                    except:
+                        print "    Creating Queue: " + queue_name
+                        cmo.createQueue(queue_name)
+                        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/Queues/' + queue_name)
+                        if 'jndiname' in queue_config:
+                            set('JNDIName', queue_config['jndiname'])
+                        if 'subdeployment' in queue_config:
+                            set('SubDeploymentName', queue_config['subdeployment'])
+                        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+        
+        # Step 6: Create Topics for this module
+        if jmsmodule in topics_by_module:
+            module_topics = topics_by_module[jmsmodule]
+            print "  Creating " + str(len(module_topics)) + " Topics..."
+            cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+            
+            for topic_name, topic_config in module_topics.items():
+                distributed = topic_config.get('distributed', '0')
+                
+                if distributed == '1':
+                    try:
+                        ls('UniformDistributedTopics/' + topic_name)
+                        print "    Distributed Topic already exists: " + topic_name
+                    except:
+                        print "    Creating Distributed Topic: " + topic_name
+                        cmo.createUniformDistributedTopic(topic_name)
+                        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/UniformDistributedTopics/' + topic_name)
+                        if 'jndiname' in topic_config:
+                            set('JNDIName', topic_config['jndiname'])
+                        if 'subdeployment' in topic_config:
+                            set('SubDeploymentName', topic_config['subdeployment'])
+                        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
+                else:
+                    try:
+                        ls('Topics/' + topic_name)
+                        print "    Topic already exists: " + topic_name
+                    except:
+                        print "    Creating Topic: " + topic_name
+                        cmo.createTopic(topic_name)
+                        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule + '/Topics/' + topic_name)
+                        if 'jndiname' in topic_config:
+                            set('JNDIName', topic_config['jndiname'])
+                        if 'subdeployment' in topic_config:
+                            set('SubDeploymentName', topic_config['subdeployment'])
+                        cd('/JMSSystemResources/' + jmsmodule + '/JMSResource/' + jmsmodule)
     
     print "=== Saving and Activating All Changes ==="
     save()
