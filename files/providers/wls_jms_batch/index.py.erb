@@ -1,10 +1,10 @@
-# Index for wls_jms_batch - returns batch configuration status
+# Index for wls_jms_batch - always return empty to force creation
+# Batch resources don't have persistent state in WebLogic
 
 f = open_file("name;jmsmodule;queues;topics;connection_factories;subdeployments;jms_servers;quotas;domain", tmp_script)
 
-# For batch resources, we just return a simple status
-# The actual indexing of individual resources is handled by their respective types
-add_index_entry(f, [domain + '/' + 'batch', 'batch', '[]', '[]', '[]', '[]', '[]', '[]', domain])
+# Don't add any entries - return empty index to force on_create to run
+# add_index_entry(f, [domain + '/' + 'batch', 'batch', '[]', '[]', '[]', '[]', '[]', '[]', domain])
 
 f.close()
 report_back_success()
