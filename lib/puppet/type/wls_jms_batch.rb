@@ -23,6 +23,9 @@ module Puppet
       Puppet.info "create batch JMS resources for #{name}"
       content = template('puppet:///modules/orawls/providers/wls_jms_batch/create.py.erb', binding)
       Puppet.debug "Generated script length: #{content.length} bytes"
+      Puppet.debug "Domain value: '#{domain}'"
+      Puppet.debug "Looking for: real_domain='#{domain}'"
+      Puppet.debug "Script first 500 chars: #{content[0..500]}"
       Puppet.debug "Script contains real_domain: #{content.include?("real_domain='#{domain}")}"
       content
     end
