@@ -21,7 +21,10 @@ module Puppet
     on_create  do | command_builder |
       wlst_action = 'create'
       Puppet.info "create batch JMS resources for #{name}"
-      template('puppet:///modules/orawls/providers/wls_jms_batch/create.py.erb', binding)
+      content = template('puppet:///modules/orawls/providers/wls_jms_batch/create.py.erb', binding)
+      Puppet.debug "Generated script length: #{content.length} bytes"
+      Puppet.debug "Script contains real_domain: #{content.include?("real_domain='#{domain}")}"
+      content
     end
 
     on_modify  do | command_builder |
