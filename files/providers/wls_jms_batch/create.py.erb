@@ -17,12 +17,12 @@ print "Timestamp: " + time.strftime('%Y-%m-%d %H:%M:%S')
 # Parse resource data from Puppet
 import json
 
-queues_json = '<%= queues %>'
-topics_json = '<%= topics %>'
-connection_factories_json = '<%= connection_factories %>'
-subdeployments_json = '<%= subdeployments %>'
-jms_servers_json = '<%= jms_servers %>'
-quotas_json = '<%= quotas %>'
+queues_json = '<%= queues.to_json if queues %>'
+topics_json = '<%= topics.to_json if topics %>'
+connection_factories_json = '<%= connection_factories.to_json if connection_factories %>'
+subdeployments_json = '<%= subdeployments.to_json if subdeployments %>'
+jms_servers_json = '<%= jms_servers.to_json if jms_servers %>'
+quotas_json = '<%= quotas.to_json if quotas %>'
 
 # Helper function to safely parse JSON
 def parse_json_safe(json_str):
