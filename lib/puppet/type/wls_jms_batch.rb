@@ -19,16 +19,19 @@ module Puppet
     end
 
     on_create  do | command_builder |
+      wlst_action = 'create'
       Puppet.info "create batch JMS resources for #{name}"
       template('puppet:///modules/orawls/providers/wls_jms_batch/create.py.erb', binding)
     end
 
     on_modify  do | command_builder |
+      wlst_action = 'modify'
       Puppet.info "modify batch JMS resources for #{name}"
       template('puppet:///modules/orawls/providers/wls_jms_batch/create.py.erb', binding)
     end
 
     on_destroy  do | command_builder |
+      wlst_action = 'destroy'
       Puppet.info "destroy batch JMS resources for #{name}"
       template('puppet:///modules/orawls/providers/wls_jms_batch/destroy.py.erb', binding)
     end
