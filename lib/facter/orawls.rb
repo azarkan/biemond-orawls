@@ -45,7 +45,7 @@ end
 def get_middleware_1036_home
   beafile = get_user_home_path + '/' + get_weblogic_user + '/bea/beahomelist'
 
-  if FileTest.exists?(beafile)
+  if File.exist?(beafile)
     output = File.read(beafile)
     if output.nil?
       return nil
@@ -60,13 +60,13 @@ end
 def get_middleware_1212_home(name)
   elements = []
   name.split(/;/).each_with_index { |element, index|
-    elements.push(element) if FileTest.exists?(element + '/wlserver')
+    elements.push(element) if File.exist?(element + '/wlserver')
   }
   elements
 end
 
 def get_orainst_loc
-  if FileTest.exists?(get_ora_inventory_path + '/oraInst.loc')
+  if File.exist?(get_ora_inventory_path + '/oraInst.loc')
     str = ''
     output = File.read(get_ora_inventory_path + '/oraInst.loc')
     output.split(/\r?\n/).each do |item|
@@ -115,7 +115,7 @@ end
 def get_orainst_products(path)
   # puts "get_orainst_products with path: "+path
   unless path.nil?
-    if FileTest.exists?(path + '/ContentsXML/inventory.xml')
+    if File.exist?(path + '/ContentsXML/inventory.xml')
       file = File.read(path + '/ContentsXML/inventory.xml')
       doc = REXML::Document.new file
       software =  ''
@@ -164,7 +164,7 @@ def get_domain(domain_path, n)
   prefix = 'ora_mdw'
   domainfile = domain_path + '/config/config.xml'
 
-  return if FileTest.exists?(domainfile) == false
+  return if File.exist?(domainfile) == false
 
   file = File.read(domainfile)
   doc = REXML::Document.new file
@@ -380,7 +380,7 @@ def get_domain(domain_path, n)
       else
         fileAdapterPlan += apps.elements['plan-path'].text
       end
-      if FileTest.exists?(fileAdapterPlan)
+      if File.exist?(fileAdapterPlan)
         subfile = File.read(fileAdapterPlan)
         subdoc = REXML::Document.new subfile
         planroot = subdoc.root
@@ -452,7 +452,7 @@ def get_domain(domain_path, n)
       else
         aqAdapterPlan += apps.elements['plan-path'].text
       end
-      if FileTest.exists?(aqAdapterPlan)
+      if File.exist?(aqAdapterPlan)
 
         subfile = File.read(aqAdapterPlan)
         subdoc = REXML::Document.new subfile
@@ -489,7 +489,7 @@ def get_domain(domain_path, n)
       else
         jmsAdapterPlan += apps.elements['plan-path'].text
       end
-      if FileTest.exists?(jmsAdapterPlan)
+      if File.exist?(jmsAdapterPlan)
 
         subfile = File.read(jmsAdapterPlan)
         subdoc = REXML::Document.new subfile
@@ -528,7 +528,7 @@ def get_domain(domain_path, n)
         ftpAdapterPlan += apps.elements['plan-path'].text
       end
       Puppet.debug "ftp #{ftpAdapterPlan}"
-      if FileTest.exists?(ftpAdapterPlan)
+      if File.exist?(ftpAdapterPlan)
 
         subfile = File.read(ftpAdapterPlan)
         subdoc = REXML::Document.new subfile
@@ -569,7 +569,7 @@ def get_domain(domain_path, n)
         mQSeriesAdapterPlan += apps.elements['plan-path'].text
       end
       Puppet.debug "mqseries #{mQSeriesAdapterPlan}"
-      if FileTest.exists?(mQSeriesAdapterPlan)
+      if File.exist?(mQSeriesAdapterPlan)
 
         subfile = File.read(mQSeriesAdapterPlan)
         subdoc = REXML::Document.new subfile
@@ -838,7 +838,7 @@ count_domains = -1
 
 def get_domains(domain_folder, count_domains)
   # check all domain in a domains folder
-  if FileTest.exists?(domain_folder)
+  if File.exist?(domain_folder)
     count_domains += 1
     # add domain facts
     get_domain(domain_folder, count_domains)
