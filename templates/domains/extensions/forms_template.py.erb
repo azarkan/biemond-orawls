@@ -101,7 +101,7 @@ print 'Call getDatabaseDefaults which reads the service table'
 getDatabaseDefaults()
 
 
-<% if scope['orawls::domain::ohs_standalone_listen_address']  != '' and scope['orawls::domain::ohs_standalone_listen_port']  != '' and scope['orawls::domain::ohs_standalone_ssl_listen_port']  != '' -%>
+<% if @ohs_standalone_listen_address  != '' and @ohs_standalone_listen_port  != '' and @ohs_standalone_ssl_listen_port  != '' -%>
 print 'Creating ohs1 component'
 # Can't use ohs_createInstance() because it requires online
 #ohs_createInstance(instanceName='ohs1', machine='<%= @adminserver_machine_name %>', listenPort='<%= @ohs_standalone_listen_port %>', sslPort='<%= @ohs_standalone_ssl_listen_port %>')
