@@ -787,8 +787,19 @@ define orawls::domain (
         path        => $exec_path,
         user        => $os_user,
         group       => $os_group,
+        unless      => "/usr/bin/test -f ${domain_dir}/.domain_extended",
         require     => [Exec["execwlst ${domain_name} ${title}"],
                         File["domain_extension.py ${domain_name} ${title}"],],
+      }
+
+      # Create marker file after successful extension
+      exec { "mark domain extended ${domain_name} ${title}":
+        command => "/bin/touch ${domain_dir}/.domain_extended",
+        creates => "${domain_dir}/.domain_extended",
+        require => Exec["execwlst ${domain_name} extension ${title}"],
+        path    => $exec_path,
+        user    => $os_user,
+        group   => $os_group,
       }
     }
 
