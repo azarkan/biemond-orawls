@@ -663,12 +663,13 @@ define orawls::domain (
     if !defined(File[$domains_dir]) {
       # check oracle install folder
       file { $domains_dir:
-        ensure  => directory,
-        recurse => true,
-        replace => false,
-        mode    => lookup('orawls::permissions'),
-        owner   => $os_user,
-        group   => $os_group,
+        ensure    => directory,
+        recurse   => true,
+        replace   => false,
+        max_files => -1,  # Disable limit - WebLogic domains can have many files
+        mode      => lookup('orawls::permissions'),
+        owner     => $os_user,
+        group     => $os_group,
       }
     }
 
