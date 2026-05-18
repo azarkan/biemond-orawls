@@ -882,9 +882,11 @@ rescue
   Puppet.debug "#{wls_domains_file} not found"
 end
 
+# Capture count before setcode block to avoid Ruby 3 closure scoping issue
+final_domain_count = count_domains + 1
 Facter.add('ora_mdw_domain_cnt') do
   setcode do
-    count_domains += 1
+    final_domain_count
   end
 end
 
