@@ -414,7 +414,7 @@ def get_domain(domain_path, n)
         dbAdapterPlan += apps.elements['plan-path'].text
       end
       Puppet.debug "db #{dbAdapterPlan}"
-      if FileTest.exists?(dbAdapterPlan)
+      if File.exist?(dbAdapterPlan)
 
         subfile = File.read(dbAdapterPlan)
         subdoc = REXML::Document.new subfile
